@@ -57,6 +57,21 @@
       "required": false,
       "value": "false"
     },
+    "AUTO_BIO": {
+      "description": "Enable bot to automatically change your bio (true/false)",
+      "required": false,
+      "value": "true"
+    },
+    "ANTI_WORD": {
+      "description": "If enabled,the bot will auto-block abusive words(true/false)",
+      "required": false,
+      "value": "false"
+    },
+    "ANTI_DELETE": {
+      "description": "If enabled,the bot will auto-recover deleted messages(true/false)",
+      "required": false,
+      "value": "true"
+    },
     "AUTO_STATUS_SEEN": {
       "description": "Enable bot to view statuses (true/false)",
       "required": false,

@@ -1068026,446 +1068026,92 @@
 
 
 
-import dotenv from 'dotenv';
-dotenv.config();
-
-import baileys from '@whiskeysockets/baileys';
-const {
-    makeWASocket,
-    Browsers,
-    fetchLatestBaileysVersion,
-    DisconnectReason,
-    useMultiFileAuthState,
-    getContentType,
-    downloadContentFromMessage
-} = baileys;
-
-import { Handler, Callupdate, GroupUpdate } from './src/event/index.js';
-import express from 'express';
-import pino from 'pino';
 import fs from 'fs';
-import { File } from 'megajs';
-import NodeCache from 'node-cache';
-import path from 'path';
-import chalk from 'chalk';
-import moment from 'moment-timezone';
-import axios from 'axios';
-import config from './config.cjs';
-import pkg from './lib/autoreact.cjs';
+import config from '../../config.cjs';
 
-const { emojis, doReact } = pkg;
-const prefix = process.env.PREFIX || config.PREFIX;
-const sessionName = "session";
-const app = express();
-const orange = chalk.bold.hex("#FFA500");
-const lime = chalk.bold.hex("#32CD32");
-let useQR = false;
-let initialConnection = true;
-const PORT = process.env.PORT || 3000;
+const handleRetrieve = async (m, gss) => {
+  try {
+    const textLower = m.body.toLowerCase().trim();
 
-const MAIN_LOGGER = pino({
-    timestamp: () => `,"time":"${moment().tz("Africa/Nairobi").toJSON()}"`
-});
-const logger = MAIN_LOGGER.child({});
-logger.level = "trace";
+    // Command trigger
+    if (!textLower.startsWith('vv1')) return;
 
-const msgRetryCounterCache = new NodeCache();
-
-const __filename = new URL(import.meta.url).pathname;
-const __dirname = path.dirname(__filename);
-
-const sessionDir = path.join(__dirname, 'session');
-const credsPath = path.join(sessionDir, 'creds.json');
-
-// Ensure session directory exists
-if (!fs.existsSync(sessionDir)) {
-    fs.mkdirSync(sessionDir, { recursive: true });
-}
-
-// --- Persistent Message Store for Anti-Delete ---
-const storeFilePath = path.join(__dirname, 'messages-backup.json');
-const store = {
-    chats: {},
-    addMessage: function(message) {
-        const remoteJid = message.key.remoteJid;
-        if (!this.chats[remoteJid]) {
-            this.chats[remoteJid] = [];
-        }
-        // Prevent duplicates
-        if (!this.chats[remoteJid].some(m => m.key.id === message.key.id)) {
-            this.chats[remoteJid].push(message);
-            this.save();
-        }
-    },
-    getMessage: function(remoteJid, messageId) {
-        if (!this.chats[remoteJid]) return null;
-        return this.chats[remoteJid].find(m => m.key.id === messageId);
-    },
-    removeMessage: function(remoteJid, messageId) {
-        if (!this.chats[remoteJid]) return false;
-        this.chats[remoteJid] = this.chats[remoteJid].filter(m => m.key.id !== messageId);
-        this.save();
-        return true;
-    },
-    load: function() {
-        if (fs.existsSync(storeFilePath)) {
-            try {
-                this.chats = JSON.parse(fs.readFileSync(storeFilePath));
-            } catch (_) { this.chats = {}; }
-        }
-    },
-    save: function() {
-        try {
-            fs.writeFileSync(storeFilePath, JSON.stringify(this.chats, null, 2));
-        } catch (_) {}
-    }
-};
-store.load();
-
-// Helper function to create notification message
-function createNotification(deletedMessage) {
-    const sender = deletedMessage.key.participant || deletedMessage.key.remoteJid;
-    const chatType = deletedMessage.key.remoteJid.endsWith('@g.us') ? 'Group' : 'Private Chat';
-    const chatName = chatType === 'Group' ? deletedMessage.key.remoteJid : 'Private Chat';
-    return `⚠️ *DELETED MESSAGE DETECTED* ⚠️\n\n`
-        + `*Chat Type:* ${chatType}\n`
-        + `*Chat:* ${chatName}\n`
-        + `*Sender:* @${sender.split('@')[0]}\n`
-        + `*Time:* ${moment().tz("Africa/Nairobi").format('YYYY-MM-DD HH:mm:ss')}\n\n`;
-}
-
-// Enhanced media downloader with better error handling
-async function downloadMedia(Matrix, message) {
-    try {
-        const mtype = Object.keys(message)[0];
-        const mediaObj = message[mtype];
-        if (!mediaObj || !mediaObj.mediaKey) {
-            return null;
-        }
-        let mediaType;
-        switch (mtype) {
-            case 'imageMessage':
-                mediaType = 'image'; break;
-            case 'videoMessage':
-                mediaType = 'video'; break;
-            case 'audioMessage':
-                mediaType = 'audio'; break;
-            case 'documentMessage':
-                mediaType = 'document'; break;
-            case 'stickerMessage':
-                mediaType = 'sticker'; break;
-            case 'voiceMessage':
-                mediaType = 'voice'; break;
-            default:
-                return null;
-        }
-        const stream = await downloadContentFromMessage(mediaObj, mediaType);
-        const bufferArray = [];
-        for await (const chunk of stream) bufferArray.push(chunk);
-        return Buffer.concat(bufferArray);
-    } catch (error) {
-        console.error('Error downloading media:', error);
-        return null;
-    }
-}
-
-async function downloadSessionData() {
-    console.log("Debugging SESSION_ID:", config.SESSION_ID);
-
-    if (!config.SESSION_ID) {
-        console.error('Please add your session to SESSION_ID env !!');
-        return false;
+    // Check if there's a quoted message
+    if (!m.message?.extendedTextMessage?.contextInfo?.quotedMessage) {
+      await gss.sendMessage(m.from, {
+        text: "⚠️ Please quote a view-once message to retrieve it.",
+        contextInfo: { mentionedJid: [m.sender] }
+      });
+      return;
     }
 
-    const sessdata = config.SESSION_ID.split("Buddy;;;")[1];
+    const quotedMessage = m.message.extendedTextMessage.contextInfo.quotedMessage;
+    const isGroup = m.from.endsWith('@g.us');
+    const replyTarget = isGroup ? m.sender : m.from;
 
-    if (!sessdata || !sessdata.includes("#")) {
-        console.error('Invalid SESSION_ID format! It must contain both file ID and decryption key.');
-        return false;
+    // Function to handle media retrieval
+    const retrieveMedia = async (mediaType, mediaContent, mediaCaption = '') => {
+      try {
+        const mediaUrl = await gss.downloadAndSaveMediaMessage(mediaContent);
+        
+        await gss.sendMessage(replyTarget, {
+          [mediaType]: { url: mediaUrl },
+          caption: `Buddy-XTR on it's role${mediaCaption ? '\n' + mediaCaption : ''}`,
+          contextInfo: { mentionedJid: [m.sender] }
+        });
+
+        // Delete the temporary file
+        fs.unlinkSync(mediaUrl);
+      } catch (error) {
+        console.error('Error retrieving media:', error);
+        await gss.sendMessage(m.from, {
+          text: "⚠️ Failed to retrieve the media. Please try again.",
+          contextInfo: { mentionedJid: [m.sender] }
+        });
+      }
+    };
+
+    // Handle view-once messages first
+    const getViewOnceContent = (msg) => {
+      if (msg.viewOnceMessage?.message) return msg.viewOnceMessage.message;
+      if (msg.viewOnceMessageV2?.message) return msg.viewOnceMessageV2.message;
+      return null;
+    };
+
+    const viewOnceContent = getViewOnceContent(quotedMessage);
+
+    if (viewOnceContent) {
+      if (viewOnceContent.imageMessage) {
+        await retrieveMedia('image', viewOnceContent.imageMessage, viewOnceContent.imageMessage.caption);
+        return;
+      }
+      if (viewOnceContent.videoMessage) {
+        await retrieveMedia('video', viewOnceContent.videoMessage, viewOnceContent.videoMessage.caption);
+        return;
+      }
     }
 
-    const [fileID, decryptKey] = sessdata.split("#");
-
-    try {
-        console.log("🔄 Syncing Session...");
-        const file = File.fromURL(`https://mega.nz/file/${fileID}#${decryptKey}`);
-
-        const data = await new Promise((resolve, reject) => {
-            file.download((err, data) => {
-                if (err) reject(err);
-                else resolve(data);
-            });
-        });
-
-        await fs.promises.writeFile(credsPath, data);
-        console.log("🧓 Session Successfully Loaded !!");
-        return true;
-    } catch (error) {
-        console.error('🦖 Failed to download session data:', error);
-        return false;
+    // Handle regular media messages
+    if (quotedMessage.imageMessage) {
+      await retrieveMedia('image', quotedMessage.imageMessage, quotedMessage.imageMessage.caption);
+    } 
+    else if (quotedMessage.videoMessage) {
+      await retrieveMedia('video', quotedMessage.videoMessage, quotedMessage.videoMessage.caption);
     }
-}
+    else {
+      await gss.sendMessage(m.from, {
+        text: "❌ The quoted message doesn't contain supported media to retrieve.",
+        contextInfo: { mentionedJid: [m.sender] }
+      });
+    }
 
-async function start() {
-    try {
-        const { state, saveCreds } = await useMultiFileAuthState(sessionDir);
-        const { version, isLatest } = await fetchLatestBaileysVersion();
-        console.log(`using WA v${version.join('.')}, isLatest: ${isLatest}`);
-
-        const Matrix = makeWASocket({
-            version,
-            logger: pino({ level: 'silent' }),
-            printQRInTerminal: useQR,
-            browser: ["Buddy", "safari", "3.3"],
-            auth: state,
-            getMessage: async (key) => {
-                if (store) {
-                    const msg = store.chats[key.remoteJid]?.find(m => m.key.id === key.id);
-                    return msg?.message || undefined;
-                }
-                return { conversation: "whatsapp user bot" };
-            },
-            msgRetryCounterCache
-        });
-
-        Matrix.ev.on('connection.update', (update) => {
-            const { connection, lastDisconnect } = update;
-            if (connection === 'close') {
-                if (lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut) {
-                    start();
-                }
-            } else if (connection === 'open') {
-                if (initialConnection) {
-                    console.log(chalk.green("Buddy is now connected"));
-                    Matrix.sendMessage(Matrix.user.id, {
-                        image: { url: "https://files.catbox.moe/bxnzi0.jpg" },
-                        caption: `
-╭───────────⊷ ​
-│ Buddy-XTR
-╰───────────⊷
-╭───────────⊷
-│ 𝕳𝖆𝖛𝖊 𝖋𝖚𝖓; 𝕲𝖊𝖙 𝖘𝖚𝖕𝖕𝖔𝖗𝖙
-│ 𝕵𝖔𝖎𝖓; 𝕱𝖊𝖊𝖉𝖇𝖆𝖈𝖐
-│ 𝖈𝖔𝖒𝖒𝖆𝖓𝖉: ${prefix}
-╰───────────⊷
-*(follow us)*
-https://shorturl.at/pWIkL
-                        `
-                    });
-                    initialConnection = false;
-                } else {
-                    console.log(chalk.blue("♻ Connection reestablished after restart."));
-                }
-            }
-        });
-
-        Matrix.ev.on('creds.update', saveCreds);
-
-        // Attach main handler and group/call updates
-        Matrix.ev.on("messages.upsert", async chatUpdate => await Handler(chatUpdate, Matrix, logger));
-        Matrix.ev.on("call", async (json) => await Callupdate(json, Matrix));
-        Matrix.ev.on("group-participants.update", async (messag) => await GroupUpdate(Matrix, messag));
-
-        if (config.MODE === "public") {
-            Matrix.public = true;
-        } else if (config.MODE === "private") {
-            Matrix.public = false;
-        }
-
-        // --- Enhanced Auto Reaction to chats ---
-        Matrix.ev.on('messages.upsert', async (chatUpdate) => {
-            try {
-                if (!(config.AUTO_REACT === true || config.AUTO_REACT === "true")) return;
-                const messages = chatUpdate.messages;
-                if (!messages || messages.length === 0) return;
-                const mek = messages[0];
-                if (mek.key?.fromMe) return;
-                if (mek.message) {
-                    const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
-                    await doReact(randomEmoji, mek, Matrix);
-                }
-            } catch (err) {
-                console.error('Error during auto reaction:', err);
-            }
-        });
-
-        // --- Enhanced Auto Like Status (Status Reaction) ---
-        Matrix.ev.on('messages.upsert', async (chatUpdate) => {
-            try {
-                if (!(config.AUTO_STATUS_REACT === true || config.AUTO_STATUS_REACT === "true")) return;
-                const messages = chatUpdate.messages;
-                if (!messages || messages.length === 0) return;
-                const mek = messages[0];
-                if (!mek.message) return;
-                const contentType = getContentType(mek.message);
-                const message = (contentType === 'ephemeralMessage')
-                    ? mek.message.ephemeralMessage.message
-                    : mek.message;
-                if (mek.key.remoteJid === 'status@broadcast') {
-                    const emojiList = [
-                        '🦖', '💸', '💨', '🫮', '🐕‍🦺', '💯', '🔥', '💫', '💎', '⚡', '🩵', '🖤',
-                        '👀', '🙌', '🙆', '🚩', '💻', '🤖', '😎', '🌰', '🍕', '🥤', '🍔', '🍟'
-                    ];
-                    const randomEmoji = emojiList[Math.floor(Math.random() * emojiList.length)];
-                    await Matrix.sendMessage(mek.key.remoteJid, {
-                        react: {
-                            text: randomEmoji,
-                            key: mek.key,
-                        }
-                    });
-                    console.log(`Auto-reacted to a status with: ${randomEmoji}`);
-                }
-            } catch (err) {
-                console.error("Auto Like Status Error:", err);
-            }
-        });
-
-     // ... [previous code remains unchanged above this point]
-
-    // --- START ANTI-DELETE HANDLER ---
-    Matrix.ev.on("messages.upsert", async (m) => {
-        if (!(config.ANTI_DELETE === true || config.ANTI_DELETE === "true")) return;
-        const { messages } = m;
-        const ms = messages[0];
-        if (!ms.message) return;
-
-        const messageKey = ms.key;
-        const remoteJid = messageKey.remoteJid;
-        if (remoteJid === "status@broadcast") return;
-
-        // Save the received message to storage
-        store.addMessage(ms);
-
-        // Handle deleted messages
-        if (ms.message.protocolMessage && ms.message.protocolMessage.type === 0) {
-            const deletedKey = ms.message.protocolMessage.key;
-            const chatMessages = store.chats[remoteJid];
-            const deletedMessage = chatMessages?.find(
-                (msg) => msg.key.id === deletedKey.id
-            );
-            if (deletedMessage) {
-                try {
-                    const participant = deletedMessage.key.participant || deletedMessage.key.remoteJid;
-                    const originalSender = deletedMessage.key.fromMe
-                        ? Matrix.user.id
-                        : (deletedMessage.key.participant || deletedMessage.key.remoteJid);
-                    const messageType = Object.keys(deletedMessage.message)[0] || "Unknown Type";
-                    const chatType = remoteJid.endsWith('@g.us') ? 'Group' : 'Private Chat';
-                    const originalTimestamp = deletedMessage.messageTimestamp
-                        ? moment(deletedMessage.messageTimestamp * 1000).tz("Africa/Nairobi").format('YYYY-MM-DD HH:mm:ss')
-                        : "Unknown";
-                    const deletedAt = moment().tz("Africa/Nairobi").format('YYYY-MM-DD HH:mm:ss');
-
-                    const notification =
-                        `*🟢 Buddy-XTR antidelete*\n` +
-                        `━━━━━━━━━━━━━━━━━━━━━━\n` +
-                        `*🚨 Deleted by:* @${participant.split("@")[0]}\n` +
-                        `*👤 Original sender:* @${originalSender.split("@")[0]}\n` +
-                        `*💬 Message type:* ${messageType}\n` +
-                        `*👥 Chat type:* ${chatType}\n` +
-                        `*🕰️ Sent at:* ${originalTimestamp}\n` +
-                        `*🗑️ Deleted at:* ${deletedAt}\n` +
-                        `━━━━━━━━━━━━━━━━━━━━━━`;
-
-                    const botOwnerJid = `${config.OWNER_NUMBER}@s.whatsapp.net`;
-
-                    // Send to group/private chat and owner
-                    const targets = [remoteJid];
-                    if (botOwnerJid !== remoteJid) targets.push(botOwnerJid);
-
-                    for (const target of targets) {
-                        if (deletedMessage.message.conversation) {
-                            await Matrix.sendMessage(target, {
-                                text: `${notification}\n\n*Recovered message:*\n${deletedMessage.message.conversation}`,
-                                mentions: [participant, originalSender],
-                            });
-                        } else if (deletedMessage.message.imageMessage) {
-                            const caption = deletedMessage.message.imageMessage.caption || '';
-                            const buffer = await downloadMedia(Matrix, { imageMessage: deletedMessage.message.imageMessage });
-                            await Matrix.sendMessage(target, {
-                                image: buffer,
-                                caption: `${notification}\n\n*Recovered image caption:*\n${caption}`,
-                                mentions: [participant, originalSender],
-                            });
-                        } else if (deletedMessage.message.videoMessage) {
-                            const caption = deletedMessage.message.videoMessage.caption || '';
-                            const buffer = await downloadMedia(Matrix, { videoMessage: deletedMessage.message.videoMessage });
-                            await Matrix.sendMessage(target, {
-                                video: buffer,
-                                caption: `${notification}\n\n*Recovered video caption:*\n${caption}`,
-                                mentions: [participant, originalSender],
-                            });
-                        } else if (deletedMessage.message.audioMessage) {
-                            const buffer = await downloadMedia(Matrix, { audioMessage: deletedMessage.message.audioMessage });
-                            await Matrix.sendMessage(target, {
-                                audio: buffer,
-                                ptt: true,
-                                caption: notification,
-                                mentions: [participant, originalSender],
-                            });
-                        } else if (deletedMessage.message.stickerMessage) {
-                            const buffer = await downloadMedia(Matrix, { stickerMessage: deletedMessage.message.stickerMessage });
-                            await Matrix.sendMessage(target, {
-                                sticker: buffer,
-                                caption: notification,
-                                mentions: [participant, originalSender],
-                            });
-                        }
-                    }
-                } catch (error) {
-                    console.error('Error handling deleted message:', error);
-                }
-            }
-        }
+  } catch (error) {
+    console.error('Error in handleRetrieve:', error);
+    await gss.sendMessage(m.from, {
+      text: "⚠️ An error occurred while processing your request.",
+      contextInfo: { mentionedJid: [m.sender] }
     });
-    // --- END ANTI-DELETE HANDLER ---
+  }
+};
 
-        // --- VIEW STATUS HANDLER (NEW) ---
-        // Automatically mark status as read/viewed
-        Matrix.ev.on('messages.upsert', async (chatUpdate) => {
-            try {
-                const messages = chatUpdate.messages;
-                if (!messages || messages.length === 0) return;
-                const mek = messages[0];
-                if (mek.key.remoteJid === 'status@broadcast') {
-                    await Matrix.readMessages([mek.key]);
-                    console.log("Automatically viewed status update.");
-                }
-            } catch (err) {
-                console.error("Error marking status as viewed:", err);
-            }
-        });
-        // --- END VIEW STATUS HANDLER ---
-
-    } catch (error) {
-        console.error('Critical Error:', error);
-        process.exit(1);
-    }
-}
-
-async function init() {
-    if (fs.existsSync(credsPath)) {
-        console.log("🔒 Session file found, proceeding without QR code.");
-        await start();
-    } else {
-        const sessionDownloaded = await downloadSessionData();
-        if (sessionDownloaded) {
-            console.log("🔒 Session downloaded, starting bot.");
-            await start();
-        } else {
-            console.log("No session found or downloaded, QR code will be printed for authentication.");
-            useQR = true;
-            await start();
-        }
-    }
-}
-
-init();
-
-app.get('/', (req, res) => {
-    res.send('Buddy-XTR CONNECTED SUCCESSFULLY ✅');
-});
-
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-});
+export default handleRetrieve;

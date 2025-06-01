@@ -1068026,6 +1068026,8 @@
 
 
 import config from '../../config.cjs';
+import fs from 'fs';
+import path from 'path';
 
 const scanCommand = async (m, gss) => {
     const prefix = config.PREFIX;
@@ -1068036,7 +1068038,6 @@ const scanCommand = async (m, gss) => {
             const instructions = `
 📱 *How to Link WhatsApp with Buddy-XTR* 🔗
 
-https://for-buddy.onrender.com/qr
 1. *Get Buddy-XTR QR Code*:
    - Open Buddy-XTR app/web interface
    - Navigate to WhatsApp linking section
@@ -1068060,10 +1068061,29 @@ https://for-buddy.onrender.com/qr
 - You may need to relink after 30 days for security
 - Keep Buddy-XTR running for continuous connection
 
-Need help? Contact support,just type ${prefix}bug.
+Need help? Contact support, just type ${prefix}bug.
             `;
             
-            await m.reply(instructions);
+            // Path to the QR image
+            const qrPath = path.join('william', 'qr.jpg');
+            
+            // Check if file exists
+            if (fs.existsSync(qrPath)) {
+                // Send image with caption in forwarded style
+                const imageData = fs.readFileSync(qrPath);
+                await gss.sendMessage(m.from, {
+                    image: imageData,
+                    caption: instructions,
+                    contextInfo: {
+                        forwardingScore: 999, // Makes it appear forwarded many times
+                        isForwarded: true
+                    },
+                    mimetype: 'image/jpeg'
+                });
+            } else {
+                await m.reply('QR code image not found. Please contact admin.');
+            }
+            
             await m.React("✅");
             
         } catch (error) {

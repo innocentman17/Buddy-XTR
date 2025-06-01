@@ -1068042,314 +1068042,42 @@ const alive = async (m, sock) => {
     : '';
 
   if (cmd === "menu") {
-    await m.React('🕵');
-    
-    // Uptime calculation
-    const uptimeSeconds = process.uptime();
-    const days = Math.floor(uptimeSeconds / (24 * 3600));
-    const hours = Math.floor((uptimeSeconds % (24 * 3600)) / 3600);
-    const minutes = Math.floor((uptimeSeconds % 3600) / 60);
-    const seconds = Math.floor(uptimeSeconds % 60);
+    try {
+      await m.React('🕵');
+      
+      // Uptime calculation
+      const uptimeSeconds = process.uptime();
+      const days = Math.floor(uptimeSeconds / (24 * 3600));
+      const hours = Math.floor((uptimeSeconds % (24 * 3600)) / 3600);
+      const minutes = Math.floor((uptimeSeconds % 3600) / 60);
+      const seconds = Math.floor(uptimeSeconds % 60);
 
-    // Time-based greeting
-    const time2 = moment().tz("Asia/Karachi").format("HH:mm:ss");
-    let pushwish = "";
-    if (time2 < "05:00:00") pushwish = "Good Morning 🌄";
-    else if (time2 < "11:00:00") pushwish = "Good Morning 🌄";
-    else if (time2 < "15:00:00") pushwish = "Good Afternoon 🌅";
-    else if (time2 < "19:00:00") pushwish = "Good Evening 🌃";
-    else pushwish = "Good Night 🌌";
+      // Time-based greeting
+      const time2 = moment().tz("Asia/Karachi").format("HH:mm:ss");
+      let pushwish = "";
+      if (time2 < "05:00:00") pushwish = "Good Morning 🌄";
+      else if (time2 < "11:00:00") pushwish = "Good Morning 🌄";
+      else if (time2 < "15:00:00") pushwish = "Good Afternoon 🌅";
+      else if (time2 < "19:00:00") pushwish = "Good Evening 🌃";
+      else pushwish = "Good Night 🌌";
 
-    // Define different font styles
-    const fontStyles = [
-      {
-        name: "Bold",
-        transform: (text) => `*${text}*`
-      },
-      {
-        name: "Italic",
-        transform: (text) => `_${text}_`
-      },
-      {
-        name: "Monospace",
-        transform: (text) => '```' + text + '```'
-      },
-      {
-        name: "Strikethrough",
-        transform: (text) => `~${text}~`
-      },
-      {
-        name: "Small Caps",
-        transform: (text) => text.toUpperCase()
-      },
-      {
-        name: "Fancy",
-        transform: (text) => {
-          const fancyMap = {
-            a: '𝒶', b: '𝒷', c: '𝒸', d: '𝒹', e: '𝑒', f: '𝒻', g: '𝑔', h: '𝒽', i: '𝒾', j: '𝒿',
-            k: '𝓀', l: '𝓁', m: '𝓂', n: '𝓃', o: '𝑜', p: '𝓅', q: '𝓆', r: '𝓇', s: '𝓈', t: '𝓉',
-            u: '𝓊', v: '𝓋', w: '𝓌', x: '𝓍', y: '𝓎', z: '𝓏',
-            A: '𝒜', B: '𝐵', C: '𝒞', D: '𝒟', E: '𝐸', F: '𝐹', G: '𝒢', H: '𝐻', I: '𝐼', J: '𝒥',
-            K: '𝒦', L: '𝐿', M: '𝑀', N: '𝒩', O: '𝒪', P: '𝒫', Q: '𝒬', R: '𝑅', S: '𝒮', T: '𝒯',
-            U: '𝒰', V: '𝒱', W: '𝒲', X: '𝒳', Y: '𝒴', Z: '𝒵'
-          };
-          return text.split('').map(char => fancyMap[char] || char).join('');
-        }
-      },
-      {
-        name: "Double Struck",
-        transform: (text) => {
-          const doubleStruckMap = {
-            a: '𝕒', b: '𝕓', c: '𝕔', d: '𝕕', e: '𝕖', f: '𝕗', g: '𝕘', h: '𝕙', i: '𝕚', j: '𝕛',
-            k: '𝕜', l: '𝕝', m: '𝕞', n: '𝕟', o: '𝕠', p: '𝕡', q: '𝕢', r: '𝕣', s: '𝕤', t: '𝕥',
-            u: '𝕦', v: '𝕧', w: '𝕨', x: '𝕩', y: '𝕪', z: '𝕫',
-            A: '𝔸', B: '𝔹', C: 'ℂ', D: '𝔻', E: '𝔼', F: '𝔽', G: '𝔾', H: 'ℍ', I: '𝕀', J: '𝕁',
-            K: '𝕂', L: '𝕃', M: '𝕄', N: 'ℕ', O: '𝕆', P: 'ℙ', Q: 'ℚ', R: 'ℝ', S: '𝕊', T: '𝕋',
-            U: '𝕌', V: '𝕍', W: '𝕎', X: '𝕏', Y: '𝕐', Z: 'ℤ'
-          };
-          return text.split('').map(char => doubleStruckMap[char] || char).join('');
-        }
-      }
-    ];
-
-    // Language translations
-    const languageTranslations = [
-      {
-        name: "English",
-        translations: {
-          hello: "Hello",
-          uptime: "Uptime",
-          mode: "Mode",
-          prefix: "Prefix",
-          ownerCommands: "Owner Commands",
-          searchTools: "Search Tools",
-          aiCommands: "AI Commands",
-          religious: "Religious",
-          christian: "Christian",
-          islamic: "Islamic",
-          conversionTools: "Conversion Tools",
-          mediaDownloaders: "Media Downloaders",
-          logoMaker: "Logo Maker",
-          groupManagement: "Group Management",
-          audioFilters: "Audio Filters",
-          stickerCommands: "Sticker Commands",
-          otherCommands: "Other Commands",
-          stalkerTools: "Stalker Tools",
-          configuration: "Configuration",
-          helpPrompt: `Type ${prefix}help <command> for info`
-        }
-      },
-      {
-        name: "Spanish",
-        translations: {
-          hello: "Hola",
-          uptime: "Tiempo activo",
-          mode: "Modo",
-          prefix: "Prefijo",
-          ownerCommands: "Comandos de dueño",
-          searchTools: "Herramientas de búsqueda",
-          aiCommands: "Comandos de IA",
-          religious: "Religioso",
-          christian: "Cristiano",
-          islamic: "Islámico",
-          conversionTools: "Herramientas de conversión",
-          mediaDownloaders: "Descargadores de medios",
-          logoMaker: "Creador de logos",
-          groupManagement: "Gestión de grupo",
-          audioFilters: "Filtros de audio",
-          stickerCommands: "Comandos de stickers",
-          otherCommands: "Otros comandos",
-          stalkerTools: "Herramientas de stalkeo",
-          configuration: "Configuración",
-          helpPrompt: `Escribe ${prefix}help <comando> para información`
-        }
-      },
-      {
-        name: "French",
-        translations: {
-          hello: "Bonjour",
-          uptime: "Temps de fonctionnement",
-          mode: "Mode",
-          prefix: "Préfixe",
-          ownerCommands: "Commandes du propriétaire",
-          searchTools: "Outils de recherche",
-          aiCommands: "Commandes IA",
-          religious: "Religieux",
-          christian: "Chrétien",
-          islamic: "Islamique",
-          conversionTools: "Outils de conversion",
-          mediaDownloaders: "Téléchargeurs de médias",
-          logoMaker: "Créateur de logo",
-          groupManagement: "Gestion de groupe",
-          audioFilters: "Filtres audio",
-          stickerCommands: "Commandes d'autocollants",
-          otherCommands: "Autres commandes",
-          stalkerTools: "Outils de traçage",
-          configuration: "Configuration",
-          helpPrompt: `Tapez ${prefix}help <commande> pour info`
-        }
-      },
-      {
-        name: "Arabic",
-        translations: {
-          hello: "مرحباً",
-          uptime: "مدة التشغيل",
-          mode: "الوضع",
-          prefix: "البادئة",
-          ownerCommands: "أوامر المالك",
-          searchTools: "أدوات البحث",
-          aiCommands: "أوامر الذكاء الاصطناعي",
-          religious: "ديني",
-          christian: "مسيحي",
-          islamic: "إسلامي",
-          conversionTools: "أدوات التحويل",
-          mediaDownloaders: "برامج تنزيل الوسائط",
-          logoMaker: "صانع الشعارات",
-          groupManagement: "إدارة المجموعة",
-          audioFilters: "مرشحات الصوت",
-          stickerCommands: "أوامر الملصقات",
-          otherCommands: "أوامر أخرى",
-          stalkerTools: "أدوات التتبع",
-          configuration: "التكوين",
-          helpPrompt: `اكتب ${prefix}help <أمر> للمعلومات`
-        }
-      },
-      {
-        name: "German",
-        translations: {
-          hello: "Hallo",
-          uptime: "Betriebszeit",
-          mode: "Modus",
-          prefix: "Präfix",
-          ownerCommands: "Eigentümer-Befehle",
-          searchTools: "Such-Tools",
-          aiCommands: "KI-Befehle",
-          religious: "Religiös",
-          christian: "Christlich",
-          islamic: "Islamisch",
-          conversionTools: "Konvertierungstools",
-          mediaDownloaders: "Media-Downloader",
-          logoMaker: "Logo-Maker",
-          groupManagement: "Gruppenverwaltung",
-          audioFilters: "Audiofilter",
-          stickerCommands: "Sticker-Befehle",
-          otherCommands: "Andere Befehle",
-          stalkerTools: "Stalker-Tools",
-          configuration: "Konfiguration",
-          helpPrompt: `Tippe ${prefix}help <Befehl> für Infos`
-        }
-      },
-      {
-        name: "Japanese",
-        translations: {
-          hello: "こんにちは",
-          uptime: "稼働時間",
-          mode: "モード",
-          prefix: "プレフィックス",
-          ownerCommands: "所有者コマンド",
-          searchTools: "検索ツール",
-          aiCommands: "AIコマンド",
-          religious: "宗教的",
-          christian: "キリスト教",
-          islamic: "イスラム教",
-          conversionTools: "変換ツール",
-          mediaDownloaders: "メディアダウンローダー",
-          logoMaker: "ロゴメーカー",
-          groupManagement: "グループ管理",
-          audioFilters: "オーディオフィルター",
-          stickerCommands: "ステッカーコマンド",
-          otherCommands: "その他のコマンド",
-          stalkerTools: "ストーカーツール",
-          configuration: "設定",
-          helpPrompt: `${prefix}help <コマンド> で情報を表示`
-        }
-      },
-      {
-        name: "Russian",
-        translations: {
-          hello: "Привет",
-          uptime: "Время работы",
-          mode: "Режим",
-          prefix: "Префикс",
-          ownerCommands: "Команды владельца",
-          searchTools: "Инструменты поиска",
-          aiCommands: "AI команды",
-          religious: "Религиозный",
-          christian: "Христианский",
-          islamic: "Исламский",
-          conversionTools: "Инструменты конвертации",
-          mediaDownloaders: "Загрузчики медиа",
-          logoMaker: "Создатель лого",
-          groupManagement: "Управление группой",
-          audioFilters: "Аудио фильтры",
-          stickerCommands: "Команды стикеров",
-          otherCommands: "Другие команды",
-          stalkerTools: "Инструменты слежения",
-          configuration: "Конфигурация",
-          helpPrompt: `Введите ${prefix}help <команда> для информации`
-        }
-      },
-      {
-        name: "Chinese",
-        translations: {
-          hello: "你好",
-          uptime: "运行时间",
-          mode: "模式",
-          prefix: "前缀",
-          ownerCommands: "所有者命令",
-          searchTools: "搜索工具",
-          aiCommands: "AI命令",
-          religious: "宗教",
-          christian: "基督教",
-          islamic: "伊斯兰教",
-          conversionTools: "转换工具",
-          mediaDownloaders: "媒体下载器",
-          logoMaker: "标志制作器",
-          groupManagement: "群组管理",
-          audioFilters: "音频过滤器",
-          stickerCommands: "贴纸命令",
-          otherCommands: "其他命令",
-          stalkerTools: "追踪工具",
-          configuration: "配置",
-          helpPrompt: `输入${prefix}help <命令> 获取信息`
-        }
-      }
-    ];
-
-    // Select random font and language
-    const randomFont = fontStyles[Math.floor(Math.random() * fontStyles.length)];
-    const randomLang = languageTranslations[Math.floor(Math.random() * languageTranslations.length)];
-
-    // Apply the font transformation to menu sections
-    const transformMenuSection = (section) => {
-      const lines = section.split('\n');
-      return lines.map(line => {
-        // Don't transform the box characters
-        if (line.match(/^[╭╰╯╮│─「」•<>]+$/)) return line;
-        return randomFont.transform(line);
-      }).join('\n');
-    };
-
-    const menuSections = [
-      `╭──────────────────────╮
-│  ${randomLang.translations.hello} ${pushName}!
+      const menuDesign = `
+╭──────────────────────╮
+│  𝗛𝗲𝗹𝗹𝗼 ${pushName}!
 │  
-│  ⏳ ${randomLang.translations.uptime}: ${days}d ${hours}h ${minutes}m ${seconds}s
-│  ⚙ ${randomLang.translations.mode}: ${mode}
-│  🔠 ${randomLang.translations.prefix}: ${prefix}
-╰──────────────────────╯`,
+│  ⏳ 𝗨𝗽𝘁𝗶𝗺𝗲: ${days}d ${hours}h ${minutes}m ${seconds}s
+│  ⚙ 𝗠𝗼𝗱𝗲: ${mode}
+│  🔠 𝗣𝗿𝗲𝗳𝗶𝘅: ${prefix}
+╰──────────────────────╯
 
-      `╭───「 ${randomLang.translations.ownerCommands} 」───╮
+╭───「 𝗢𝘄𝗻𝗲𝗿 𝗖𝗼𝗺𝗺𝗮𝗻𝗱𝘀 」───╮
 │ • block
 │ • unblock
 │ • join
 │ • crew
 │ • leave
-│ • setvar
-│ • restart
-│ • pp
-│ • ownerreact
-│ • heartreact
+│ • reboot
+│ • fullpp
 │ • bc
 │ • send
 │ • upload
@@ -1068357,58 +1068085,26 @@ const alive = async (m, sock) => {
 │ • save
 │ • report
 │ • jid
-╰──────────────────────╯`,
+╰──────────────────────╯
 
-      `╭───「 ${randomLang.translations.searchTools} 」───╮
-│ • yts
-│ • google
-│ • imd
-│ • img
-│ • weather
-│ • playstore
-│ • news
-> to be fixed.
-╰──────────────────────╯`,
-
-      `╭───「 ${randomLang.translations.aiCommands} 」───╮
-│ • blackboxai
-│ • gpt
-│ • visit
-│ • define
-╰──────────────────────╯`,
-
-      `╭───「 ${randomLang.translations.religious} 」───╮
-│ ${randomLang.translations.christian}:
-│ • bible
-│ • biblelist
- ───「 ${randomLang.translations.islamic} 」───╮
-│ • surahaudio
-│ • surahurdu
-│ • asmaulhusna
-│ • prophetname
-╰──────────────────────╯`,
-
-      `╭───「 ${randomLang.translations.conversionTools} 」───╮
+╭───「 𝗖𝗼𝗻𝘃𝗲𝗿𝘀𝗶𝗼𝗻 𝗧𝗼𝗼𝗹𝘀 」───╮
 │ • url
 │ • attp3
 │ • ebinary
 │ • dbinary
 │ • emojimix
 │ • tomp3
-╰──────────────────────╯`,
+╰──────────────────────╯
 
-      `╭───「 ${randomLang.translations.mediaDownloaders} 」───╮
-│ • insta
-│ • video
-│ • gdrive
+╭───「 𝗠𝗲𝗱𝗶𝗮 𝗗𝗼𝘄𝗻𝗹𝗼𝗮𝗱𝗲𝗿𝘀 」───╮
 │ • github
 │ • tiktok
 │ • mediafire
 │ • play
 │ • apk
-╰──────────────────────╯`,
+╰──────────────────────╯
 
-      `╭───「 ${randomLang.translations.logoMaker} 」───╮
+╭───「 𝗟𝗼𝗴𝗼 𝗠𝗮𝗸𝗲𝗿 」───╮
 │ • logo
 │ • hacker
 │ • blackpink
@@ -1068465,9 +1068161,13 @@ const alive = async (m, sock) => {
 │ • tattoo
 │ • luxury
 │ • logo
-╰──────────────────────╯`,
+╰──────────────────────╯
 
-      `╭───「 ${randomLang.translations.groupManagement} 」───╮
+╭───「 Non-Prefix 」───╮
+│ • vv1
+╰──────────────────────╯
+
+╭───「 𝗚𝗿𝗼𝘂𝗽 𝗠𝗮𝗻𝗮𝗴𝗲𝗺𝗲𝗻𝘁 」───╮
 │ • del
 │ • add
 │ • kick
@@ -1068486,9 +1068186,9 @@ const alive = async (m, sock) => {
 │ • groupclose
 │ • groupinfo
 │ • poll
-╰──────────────────────╯`,
+╰──────────────────────╯
 
-      `╭───「 ${randomLang.translations.audioFilters} 」───╮
+╭───「 𝗔𝘂𝗱𝗶𝗼 𝗙𝗶𝗹𝘁𝗲𝗿𝘀 」───╮
 │ • deep
 │ • bass
 │ • robot
@@ -1068496,9 +1068196,9 @@ const alive = async (m, sock) => {
 │ • slow
 │ • smooth
 │ • nightcore
-╰──────────────────────╯`,
+╰──────────────────────╯
 
-      `╭───「 ${randomLang.translations.stickerCommands} 」───╮
+╭───「 𝗦𝘁𝗶𝗰𝗸𝗲𝗿 𝗖𝗼𝗺𝗺𝗮𝗻𝗱𝘀 」───╮
 │ • dance
 │ • poke
 │ • wink
@@ -1068523,11 +1068223,13 @@ const alive = async (m, sock) => {
 │ • cry
 │ • cuddle
 │ • bully
-╰──────────────────────╯`,
+╰──────────────────────╯
 
-      `╭───「 ${randomLang.translations.otherCommands} 」───╮
+╭───「 𝗢𝘁𝗵𝗲𝗿 𝗖𝗼𝗺𝗺𝗮𝗻𝗱𝘀 」───╮
 │ • fancy
 │ • ebinary
+│ • scanpair
+│ • scanqr
 │ • truth
 │ • dare
 │ • quiz
@@ -1068536,109 +1068238,72 @@ const alive = async (m, sock) => {
 │ • dbinary
 │ • get
 │ • fetch
-│ • update
 │ • mp3
-│ • tts
-│ • shorten
 │ • tempmail
 │ • checkmail
 │ • about
 │ • profile
-╰──────────────────────╯`,
-
-      `╭───「 ${randomLang.translations.stalkerTools} 」───╮
-│ • gitstalk
-│ • tikstalk
-│ • npmstalk
-│ • popinfo
-│ • lookup
-│ • wachannel
-╰──────────────────────╯`,
-
-      `╭───「 ${randomLang.translations.configuration} 」───╮
-│ • mode <private/public>
-│ • setprefix <symbol>
-│ • autosview <on/off>
-│ • antiword <on/off>
-│ • autoreact <on/off>
-│ • alwaysonline <on/off>
-│ • autoblock <on/off>
-│ • autobio <on/off>
-│ • anticall <on/off>
-│ • autorecording <on/off>
-│ • autotyping <on/off>
 ╰──────────────────────╯
-> ${randomLang.translations.helpPrompt}`
-    ];
 
-    // Transform each section with the random font
-    const transformedMenu = menuSections.map(section => transformMenuSection(section)).join('\n\n');
+╭───「 𝗛𝗲𝗿𝗼𝗸𝘂 𝗖𝗹𝗶𝗲𝗻𝘁 」───╮
+│ • mode 
+│ • setprefix 
+│ • autosview
+│ • antiword 
+│ • autoreact 
+│ • alwaysonline 
+│ • autoblock 
+│ • autobio 
+│ • anticall 
+│ • autorecording 
+│ • autotyping 
+╰──────────────────────╯
+> 𝗧𝘆𝗽𝗲 ${prefix}𝗁𝖾𝗅𝗉 <𝖼𝗈𝗆𝗆𝖺𝗇𝖽> 𝖿𝗈𝗋 𝗂𝗇𝖿𝗈`;
 
-    await m.React('🔮');
+      await m.React('🔮');
 
-    // Prepare audio message
-    const audioMessage = {
-        audio: { 
-            url: 'https://files.catbox.moe/8k2q7p.mp3' 
-        },
+      // Media URLs
+      const imageUrl = 'https://files.catbox.moe/ptr27z.jpg';
+      const audioUrl = 'https://files.catbox.moe/8k2q7p.mp3';
+
+      // First send the image with menu text
+      const imageMessage = {
+        image: { url: imageUrl },
+        caption: menuDesign,
+        contextInfo: {
+          externalAdReply: {
+            title: "🎵 Now Playing: Menu Theme",
+            body: "Tap to play music",
+            thumbnailUrl: imageUrl,
+            mediaType: 1,
+            mediaUrl: audioUrl,
+            sourceUrl: audioUrl,
+            showAdAttribution: true
+          }
+        }
+      };
+
+      // Send image message
+      await sock.sendMessage(m.from, imageMessage, { quoted: m });
+
+      // Then send the audio separately
+      const audioMessage = {
+        audio: { url: audioUrl },
         mimetype: 'audio/mpeg',
-        ptt: false,
-        contextInfo: {
-            isForwarded: true,
-            forwardingScore: 999,
-            externalAdReply: {
-                title: "🎵 Menu Theme Music",
-                body: "Tap for free hacks.",
-                thumbnailUrl: 'https://files.catbox.moe/ptr27z.jpg',
-                sourceUrl: 'https://whatsapp.com/channel/0029Vak0genJ93wQXq3q6X3h',
-                mediaType: 2,
-                renderLargerThumbnail: true
-            }
-        }
-    };
+        ptt: false
+      };
 
-    // Send audio first
-    await sock.sendMessage(m.from, audioMessage, { quoted: m });
+      await sock.sendMessage(m.from, audioMessage, { quoted: m });
 
-    // Send menu with multiple forwarding contexts
-    const menuMessage = {
-        text: transformedMenu,
-        contextInfo: {
-            isForwarded: true,
-            forwardedNewsletterMessageInfo: {
-                newsletterJid: '120363313938933929@newsletter',
-                newsletterName: "𝕭𝖔𝖙 𝖇𝖞 𝕮𝖆𝖗𝖑",
-                serverMessageId: -1,
-            },
-            forwardingScore: 999,
-            externalAdReply: {
-                title: "📜 Bot Command Menu",
-                body: `Using ${randomFont.name} font | Language: ${randomLang.name}`,
-                thumbnailUrl: 'https://files.catbox.moe/ptr27z.jpg',
-                sourceUrl: 'https://whatsapp.com/channel/0029Vak0genJ93wQXq3q6X3h',
-                mediaType: 1,
-                renderLargerThumbnail: true,
-                showAdAttribution: true
-            },
-            // Add multiple forwarding layers
-            forwardingScore: 999,
-            forwardedNewsletterMessageInfo: [
-                {
-                    newsletterJid: '120363313938933929@newsletter',
-                    newsletterName: "Bot Updates Channel",
-                    serverMessageId: -1
-                },
-                {
-                    newsletterJid: '120363313938933929@newsletter',
-                    newsletterName: "Command Center",
-                    serverMessageId: -1
-                }
-            ]
-        }
-    };
-
-    // Send menu message
-    await sock.sendMessage(m.from, menuMessage, { quoted: m });
+    } catch (error) {
+      console.error('Error in menu command:', error);
+      // Fallback to text-only menu if media fails
+      await sock.sendMessage(
+        m.from, 
+        { text: "🚫 Failed to load media. Here's the menu:\n\n" + menuDesign },
+        { quoted: m }
+      );
+    }
   }
 };
 

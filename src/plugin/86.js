@@ -1068024,7 +1068024,10 @@
 
 
 
+
 import config from '../../config.cjs';
+import fs from 'fs';
+import path from 'path';
 
 const pairCommand = async (m, gss) => {
     const prefix = config.PREFIX;
@@ -1068032,7 +1068035,12 @@ const pairCommand = async (m, gss) => {
     
     if (cmd === 'scanpair') {
         try {
-            const instructions = `
+            const imagePath = path.join('william', 'pair.jpg');
+            if (!fs.existsSync(imagePath)) {
+                throw new Error('Image not found');
+            }
+
+            const caption = `
 📱 *How to Link WhatsApp with Buddy-XTR Using Pairing Codes* 🔢
 
 https://for-buddy.onrender.com/pair
@@ -1068063,12 +1068071,19 @@ https://for-buddy.onrender.com/pair
 - Your phone must have active internet connection
 - For security, pairing automatically expires after 30 days
 
-🔒 *Security Tip*: Never share your pairing code with others!
-
 Need help? Contact support *${prefix}bug*
             `;
             
-            await m.reply(instructions);
+            // Send image with caption and mark as forwarded many times
+            await gss.sendMessage(m.from, {
+                image: fs.readFileSync(imagePath),
+                caption: caption,
+                contextInfo: {
+                    isForwarded: true,
+                    forwardingScore: 999 // Shows as forwarded many times
+                }
+            });
+            
             await m.React("✅");
             
         } catch (error) {
